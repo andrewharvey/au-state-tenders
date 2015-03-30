@@ -31,6 +31,20 @@ my $file_name = $fromDate . "_" . $toDate . ".csv";
 $file_name =~ s/\//-/g;
 open(my $csv_fh, ">", "$file_name") or die "cannot open > $file_name: $!";
 
+sub getDetailsForContract($) {
+    my ($id) = @_;
+    my $html = get('https://www.tenders.vic.gov.au/tenders/contract/view.do?id='.$id);
+
+    if ($html eq '') {
+        die "No response\n";
+    }
+
+    open(my $contract_notice, '>', "cn/$id.html");
+    print $contract_notice $html;
+    close $contract_notice;
+
+}
+
 while (defined $pageNum) {
     print STDERR "GET page $pageNum\n";
     my $html = get('https://www.tenders.vic.gov.au/tenders/contract/list.do?action=contract-search-submit&awardDateFromString=' . $fromDate . '&pageNum=' . $pageNum);
@@ -94,6 +108,7 @@ while (defined $pageNum) {
             }
             if (scalar @row > 0) {
                 unshift @row, ($link_id);
+                push @row, getDetailsForContract($link_id);
                 print $csv_fh join("\t", @row)."\n";
             }
         }
